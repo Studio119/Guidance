@@ -1,0 +1,23 @@
+/*
+ * @Author: Antoine YANG 
+ * @Date: 2020-01-11 15:36:49 
+ * @Last Modified by: Antoine YANG
+ * @Last Modified time: 2020-01-11 20:27:02
+ */
+
+svg {
+    border: 1px solid black;    /* this attribution help visualize the SVG element */
+}
+
+.container {
+    float: left;
+    margin: 8px;
+}
+
+label {
+    font-size: 13px;
+}
+
+input[type=checkbox] {
+    margin: 5px 6px 2px 15px;
+}
