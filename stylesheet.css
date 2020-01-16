@@ -21,3 +21,7 @@ label {
 input[type=checkbox] {
     margin: 5px 6px 2px 15px;
 }
+
+text {
+    pointer-events: none;
+}
