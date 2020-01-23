@@ -2,7 +2,7 @@
  * @Author: Antoine YANG 
  * @Date: 2020-01-11 15:42:51 
  * @Last Modified by: Antoine YANG
- * @Last Modified time: 2020-01-16 12:13:42
+ * @Last Modified time: 2020-01-16 11:58:00
  */
 "use strict";
 
@@ -98,7 +98,10 @@ const columnChart = {
                     columnChart.height - columnChart.padding.top - columnChart.padding.bottom
                         - columnChart.scaleY(d.value)
                 )
-                .style("fill", (d, i) => d3.schemePaired[i % 12]);
+                .style("fill", (d, i) => d3.schemePaired[i % 12])
+                .on("click", d => {
+                    columnChart.onClick(d);
+                });
 
         columns.enter()
                 .append("rect")
@@ -114,7 +117,10 @@ const columnChart = {
                     columnChart.height - columnChart.padding.top - columnChart.padding.bottom
                         - columnChart.scaleY(d.value)
                 )
-                .style("fill", (d, i) => d3.schemePaired[i % 12]);
+                .style("fill", (d, i) => d3.schemePaired[i % 12])
+                .on("click", d => {
+                    columnChart.onClick(d);
+                });
         
         columns.exit().remove();
 
@@ -173,6 +179,24 @@ const columnChart = {
                 .text(d => d.value.toString().split(".")[0]);  // use regex to remove unnecessary letters
 
         labelValue.exit().remove();
+
+        if (columnChart.activeProv) {
+            for (let i = 0; i < data.length; i++) {
+                if (data[i].name === columnChart.activeProv) {
+                    columnChart.onClick(data[i]);
+                    return;
+                }
+            }
+        }
+        columnChart.onClick({
+            name: pieChart.state ? pieChart.state.name : 'undefined',
+            value: 0,
+            details: {}
+        });
+    },
+    setYear: nextYear => {
+        columnChart.currentYear = nextYear;
+        columnChart.render();
     },
     update: nextState => {
         // Update its state and then render the SVG elements
@@ -183,5 +207,9 @@ const columnChart = {
         }
 
         columnChart.render();
+    },
+    onClick: data => {
+        columnChart.activeProv = data.name;
+        pieChart.update(data);
     }
 };
