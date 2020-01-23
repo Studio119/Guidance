@@ -2,7 +2,7 @@
  * @Author: Antoine YANG 
  * @Date: 2020-01-12 21:33:09 
  * @Last Modified by: Antoine YANG
- * @Last Modified time: 2020-01-16 00:57:26
+ * @Last Modified time: 2020-01-23 20:42:38
  */
 "use strict";
 
@@ -11,11 +11,26 @@ const pieChart = {
     width: parseInt(d3.select("#SVGpieChart").attr("width")),
     height: parseInt(d3.select("#SVGpieChart").attr("height")),
     padding: {
-        top: 40, right: 40, bottom: 40, left: 40
+        top: 60, right: 40, bottom: 40, left: 40
     },
     state: null,
     sum: 0,
     render: () => {
+        // display name of the data
+        const title = pieChart.SVG.selectAll(".title").data([pieChart.state]);
+        title.text(d => {
+            return d.name === "undefined" ? "" : d.name;
+        });
+        title.enter()
+            .append("text")
+            .attr("class", "title")
+            .attr("text-anchor", "middle")
+            .attr("x", pieChart.width / 2)
+            .attr("y", pieChart.padding.top / 2)
+            .text(d => {
+                return d.name === "undefined" ? "" : d.name;
+            });
+        title.exit().remove();
         // Generate pie
         const arcs = d3.pie().sort((a, b) => a.name.localeCompare(b.name)).value(d => d.value)(pieChart.state.data);
         const r = Math.min(
@@ -40,8 +55,6 @@ const pieChart = {
             .style("fill", (d, i) => d3.schemeCategory10[i % 10])
             .style("stroke", "none");
         path.exit().remove();
-
-        let sum = 0;
 
         const text = pieChart.SVG.selectAll(".pieText").data(arcs);
         text.attr("x", d => (Math.sin((d.startAngle + d.endAngle) / 2) * (r + 16)))

@@ -2,7 +2,7 @@
  * @Author: Antoine YANG 
  * @Date: 2020-01-11 15:42:48 
  * @Last Modified by: Antoine YANG
- * @Last Modified time: 2020-01-16 02:26:20
+ * @Last Modified time: 2020-01-23 20:34:56
  */
 "use strict";
 
@@ -33,8 +33,8 @@ const convertData = list => {
     list.forEach(item => {
         // Seperate informations from each element
         const { Prvcnm, Prvcnm_id, Sgnyea, ...datum } = item;
-        if (Prvcnm === '中国') {
-            // Skip items attributede to '中国'
+        if (Prvcnm_id === 142) {
+            // Skip items attributede to id 142
             return;
         }
         if (!timeline.hasOwnProperty(Sgnyea)) {
