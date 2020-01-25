@@ -2,25 +2,40 @@
  * @Author: Antoine YANG 
  * @Date: 2020-01-11 15:42:48 
  * @Last Modified by: Antoine YANG
- * @Last Modified time: 2020-01-23 22:13:17
+ * @Last Modified time: 2020-01-25 18:38:09
  */
 "use strict";
 
 /**
+ * 用 id 索引名称
+ */
+var PrvcnmDict = {};
+
+/**
  * Load GDP data from local json file
  */
-const loadData = () => {
-    d3.json('./gdp.json')
-        .then(res => {
-            // Callback
-            const data = convertData(res);
-            columnChart.update(data);
+const loadData = async () => {
+    // Origin data
+    await d3.json('./gdp.json')
+            .then(res => {
+                // Callback
+                const data = convertData(res);
+                columnChart.update(data);
 
-            // Initialize the time slider
-            initializeTimeSlider(Object.keys(data).sort((a, b) => (a - b)));
-        }).catch(err => {
-            console.info(err);
-        });
+                // Initialize the time slider
+                initializeTimeSlider(Object.keys(data).sort((a, b) => (a - b)));
+            }).catch(err => {
+                console.warn(err);
+            });
+    // after MDS & k-means
+    await d3.json("../back-end/output_file_k-means.json")
+            .then(res => {
+                // Callback
+                scatterChart.initialize(res);
+                flowChart.initialize(res);
+            }).catch(err => {
+                console.warn(err);
+            });
 };
 
 
@@ -36,6 +51,9 @@ const convertData = list => {
         if (Prvcnm_id === 142) {
             // Skip items attributede to id 142
             return;
+        } else {
+            // Record the entry of Prvcnm_id and Prvcnm
+            PrvcnmDict[Prvcnm_id] = Prvcnm;
         }
         if (!timeline.hasOwnProperty(Sgnyea)) {
             timeline[Sgnyea] = {};
@@ -69,56 +87,67 @@ const updateCheckbox = name => {
     columnChart.render();
 };
 
-// bind this listener on each checkbox
-const checkboxLabels = Object.keys(columnChart.filter);
-const checkboxContainer = d3.select("#checkboxContainer");
-var checkboxes = [];
-checkboxLabels.forEach((label, index) => {
-    const input = checkboxContainer.append("input")
-                    .attr("type", "checkbox")
-                    .attr("id", "checkbox" + label)
-                    .attr("checked", "checked")
-                    .on('click', () => {
-                        updateCheckbox(label);
-                    });
-    checkboxes.push(input);
-    checkboxContainer.append("label").text(label).on('click', () => {
-        // immitate clicking corresponding checkbox
-        input._groups[0][0].checked = !input._groups[0][0].checked;
-        input._groups[0][0].__on[0].listener();
+/**
+ * bind this listener on each checkbox
+ */
+(() => {
+    const checkboxLabels = Object.keys(columnChart.filter);
+    const checkboxContainer = d3.select("#checkboxContainer");
+
+    var checkboxes = [];
+
+    checkboxLabels.forEach((label, index) => {
+        const input = checkboxContainer.append("input")
+                        .attr("type", "checkbox")
+                        .attr("id", "checkbox" + label)
+                        .attr("checked", "checked")
+                        .on('click', () => {
+                            updateCheckbox(label);
+                        });
+        checkboxes.push(input);
+        checkboxContainer.append("label").text(label).on('click', () => {
+            // immitate clicking corresponding checkbox
+            input._groups[0][0].checked = !input._groups[0][0].checked;
+            input._groups[0][0].__on[0].listener();
+        });
+        if (index % 2 === 1 || index === checkboxLabels.length - 1) {
+            checkboxContainer.append("br");
+        }
     });
-    if (index % 2 === 1 || index === checkboxLabels.length - 1) {
-        checkboxContainer.append("br");
-    }
-});
-checkboxContainer.append("button")
-    .text("Select All")
-    .style("margin-left", "14px")
-    .on('click', () => {
-    checkboxes.forEach(input => {
-        input._groups[0][0].checked = true;
-        input._groups[0][0].__on[0].listener();
+
+    checkboxContainer.append("button")
+        .text("Select All")
+        .style("margin-left", "14px")
+        .on('click', () => {
+        checkboxes.forEach(input => {
+            input._groups[0][0].checked = true;
+            input._groups[0][0].__on[0].listener();
+        });
     });
-});
-checkboxContainer.append("button")
-    .text("Reverse")
-    .style("margin-left", "17px")
-    .on('click', () => {
-    checkboxes.forEach(input => {
-        input._groups[0][0].checked = !input._groups[0][0].checked;
-        input._groups[0][0].__on[0].listener();
+
+    checkboxContainer.append("button")
+        .text("Reverse")
+        .style("margin-left", "17px")
+        .on('click', () => {
+        checkboxes.forEach(input => {
+            input._groups[0][0].checked = !input._groups[0][0].checked;
+            input._groups[0][0].__on[0].listener();
+        });
     });
-});
+})();
 
 /**
  * Initialize the time slider
  * @param {*} timeTable
  */
 const initializeTimeSlider = timeTable => {
-    const padding = { top: 24, side: 20 };
+    const padding = { top: 24, side: 30 };
     const timeScale = d3.scaleLinear()
                         .domain([timeTable[0], timeTable[timeTable.length - 1]])
                         .range([0, parseInt(d3.select("#timeSlider").attr("width")) - padding.side * 2]);
+    flowChart.scaleX = d3.scaleLinear()
+                        .domain([timeTable[0], timeTable[timeTable.length - 1]])
+                        .range([0, (parseInt(d3.select("#timeSlider").attr("width")) - padding.side * 2) * 4]);
     // scale and axis
     const g = d3.select("#timeSlider")
                 .selectAll("g")
@@ -134,15 +163,15 @@ const initializeTimeSlider = timeTable => {
     const axis = d3.axisBottom(timeScale).ticks(timeTable.length);
     g.call(axis);
     g.selectAll("text").remove();
-    g.selectAll("line").attr('transform', 'translate(0,-2.5)');
-    const r = (timeScale(timeTable[1]) - timeScale(timeTable[0])) * 0.67;
+    g.selectAll("line").remove();
+    const r = (timeScale(timeTable[1]) - timeScale(timeTable[0])) * 0.3;
     // draggable element
     const circle = d3.select("#timeSlider")
                     .append("circle")
                     .attr("id", "slideCircle")
                     .attr(
                         "transform", "translate("
-                                        + (padding.side + 0.7) + ","
+                                        + padding.side + ","
                                         + padding.top
                                     + ")"
                     )
@@ -158,7 +187,7 @@ const initializeTimeSlider = timeTable => {
                     .attr("id", "slideCircleFocus")
                     .attr(
                         "transform", "translate("
-                                        + (padding.side + 0.7) + ","
+                                        + padding.side + ","
                                         + padding.top
                                     + ")"
                     )
@@ -172,7 +201,7 @@ const initializeTimeSlider = timeTable => {
                     .attr("id", "slideLabel")
                     .attr(
                         "transform", "translate("
-                                        + (padding.side + 0.7) + ","
+                                        + padding.side + ","
                                         + padding.top
                                     + ")"
                     )
@@ -182,6 +211,16 @@ const initializeTimeSlider = timeTable => {
                     .style("font-size", "11px")
                     .style("fill", "#000000")
                     .text(timeTable[0]);
+    
+    const hightlight = d3.select("#timeSlider")
+                    .append("rect")
+                    .attr("id", "slideHighlight")
+                    .attr("x", timeScale(timeTable[0]) - 30 + padding.side)
+                    .attr("y", flowChart.padding.top - 294)
+                    .attr("width", 60)
+                    .attr("height", flowChart.height - flowChart.padding.top - flowChart.padding.bottom)
+                    .style("transform", "translateX(0)")
+                    .style("fill", "#101020");
 
     // Define a dragging behavior
     const behavior = d3.drag()
@@ -197,7 +236,10 @@ const initializeTimeSlider = timeTable => {
                             if (currentYear !== columnChart.currentYear) {
                                 focus.attr("cx", timeScale(currentYear));
                                 label.style("fill", "#A0A0A0").attr("x", timeScale(currentYear)).text(currentYear);
+                                hightlight.style("transform", "translateX(" + timeScale(currentYear) + "px)");
                                 columnChart.setYear(currentYear);
+                                scatterChart.update(currentYear);
+                                flowChart.transform(currentYear);
                             }
                         })
                         .on('end', () => {

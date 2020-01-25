@@ -2,7 +2,7 @@
  * @Author: Antoine YANG 
  * @Date: 2020-01-11 15:42:51 
  * @Last Modified by: Antoine YANG
- * @Last Modified time: 2020-01-16 11:58:00
+ * @Last Modified time: 2020-01-25 21:39:44
  */
 "use strict";
 
@@ -98,14 +98,52 @@ const columnChart = {
                     columnChart.height - columnChart.padding.top - columnChart.padding.bottom
                         - columnChart.scaleY(d.value)
                 )
+                .attr("id", d => ("column_" + d.name))
                 .style("fill", (d, i) => d3.schemePaired[i % 12])
+                .style("fill-opacity", d => {
+                    if (pieChart.state && d.name === pieChart.state.name) {
+                        return 0.6;
+                    } else {
+                        return 1;
+                    }
+                })
+                .style("stroke", d => {
+                    if (pieChart.state && d.name === pieChart.state.name) {
+                        return "red";
+                    } else {
+                        return "none";
+                    }
+                })
+                .style("stroke-width", "3px")
                 .on("click", d => {
+                    // hightlight corresponding elements
+                    columnChart.SVG.selectAll("rect")
+                                    .style("stroke", "none")
+                                    .style("fill-opacity", 1);
+                    columnChart.SVG.select("#column_" + d.name)
+                                    .style("fill-opacity", 0.5)
+                                    .style("stroke", "red")
+                                    .style("stroke-width", "3px");
+                    scatterChart.SVG.selectAll("circle")
+                                    .attr("r", "5px")
+                                    .style("stroke-width", "0.5px");
+                    scatterChart.SVG.select("#scatter_" + d.name)
+                                    .attr("r", "8px")
+                                    .style("stroke-width", "3px");
+                    flowChart.SVG.selectAll(".path")
+                                    .style("opacity", 0.6)
+                                    .style("stroke-width", '1px');
+                    flowChart.SVG.select("#path_" + d.name)
+                                    .style("opacity", 1)
+                                    .style("stroke-width", "4px");
+                    // interaction
                     columnChart.onClick(d);
                 });
 
         columns.enter()
                 .append("rect")
                 .attr("class", "column")
+                .attr("id", d => ("column_" + d.name))
                 .attr("x", (d, i) =>
                     columnChart.padding.left + columnSpan * (i + 0.5) - columnWidth / 2
                 )
@@ -118,7 +156,43 @@ const columnChart = {
                         - columnChart.scaleY(d.value)
                 )
                 .style("fill", (d, i) => d3.schemePaired[i % 12])
+                .style("fill-opacity", d => {
+                    if (pieChart.state && d.name === pieChart.state.name) {
+                        return 0.5;
+                    } else {
+                        return 1;
+                    }
+                })
+                .style("stroke", d => {
+                    if (pieChart.state && d.name === pieChart.state.name) {
+                        return "red";
+                    } else {
+                        return "none";
+                    }
+                })
+                .style("stroke-width", "3px")
                 .on("click", d => {
+                    // hightlight corresponding elements
+                    columnChart.SVG.selectAll("rect")
+                                    .style("stroke", "none")
+                                    .style("fill-opacity", 1);
+                    columnChart.SVG.select("#column_" + d.name)
+                                    .style("fill-opacity", 0.5)
+                                    .style("stroke", "red")
+                                    .style("stroke-width", "3px");
+                    scatterChart.SVG.selectAll("circle")
+                                    .attr("r", "5px")
+                                    .style("stroke-width", "0.5px");
+                    scatterChart.SVG.select("#scatter_" + d.name)
+                                    .attr("r", "8px")
+                                    .style("stroke-width", "3px");
+                    flowChart.SVG.selectAll(".path")
+                                    .style("opacity", 0.6)
+                                    .style("stroke-width", '1px');
+                    flowChart.SVG.select("#path_" + d.name)
+                                    .style("opacity", 1)
+                                    .style("stroke-width", "4px");
+                    // interaction
                     columnChart.onClick(d);
                 });
         

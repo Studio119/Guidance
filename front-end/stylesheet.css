@@ -2,16 +2,33 @@
  * @Author: Antoine YANG 
  * @Date: 2020-01-11 15:36:49 
  * @Last Modified by: Antoine YANG
- * @Last Modified time: 2020-01-23 20:43:21
+ * @Last Modified time: 2020-01-25 16:11:05
  */
+
+body {
+    width: 1519px;
+    height: 852px;
+    overflow: hidden;
+}
 
 svg {
     border: 1px solid black;    /* this attribution help visualize the SVG element */
 }
 
+.row {
+    display: block;
+    clear: both;
+}
+
 .container {
     float: left;
-    margin: 8px;
+    margin: 6px 8px;
+}
+
+#scatterChartContainer {
+    position: absolute;
+    top: 9px;
+    left: 482px;
 }
 
 label {

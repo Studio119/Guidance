@@ -2,7 +2,7 @@
  * @Author: Antoine YANG 
  * @Date: 2020-01-12 21:33:09 
  * @Last Modified by: Antoine YANG
- * @Last Modified time: 2020-01-23 20:42:38
+ * @Last Modified time: 2020-01-25 14:26:08
  */
 "use strict";
 
@@ -36,13 +36,13 @@ const pieChart = {
         const r = Math.min(
             pieChart.width - pieChart.padding.left - pieChart.padding.right,
             pieChart.height - pieChart.padding.top - pieChart.padding.bottom
-        ) / 2;
+        ) / 2.5;
         const path = pieChart.SVG.selectAll(".arc").data(arcs);
-        path.attr("d", d => d3.arc().innerRadius(0).outerRadius(r)(d));
+        path.attr("d", d => d3.arc().innerRadius(r * 2 / 3).outerRadius(r)(d));
         path.enter()
             .append("path")
             .attr("class", "arc")
-            .attr("d", d => d3.arc().innerRadius(0).outerRadius(r)(d))
+            .attr("d", d => d3.arc().innerRadius(r * 2 / 3).outerRadius(r)(d))
             .attr(
                 "transform", "translate("
                                 + (pieChart.padding.left + (
