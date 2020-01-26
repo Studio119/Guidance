@@ -2,7 +2,7 @@
  * @Author: Antoine YANG 
  * @Date: 2020-01-25 15:52:37 
  * @Last Modified by: Antoine YANG
- * @Last Modified time: 2020-01-25 22:01:07
+ * @Last Modified time: 2020-01-26 15:10:42
  */
 
 /**
@@ -65,7 +65,9 @@ const decide = (prevState, currState, best, possibleOrder, order) => {
         // 选择第 i 个
         order.push(possibleOrder[i]);
         // 将剩余的备选元素递归决策
-        best = decide(prevState, currState, best, possibleOrder.filter((e, index) => i !== index), order.map(item => item));
+        best = decide(
+            prevState, currState, best, possibleOrder.filter((e, index) => i !== index), order.map(item => item)
+        );
         // 取出本次迭代放入的元素，回溯
         order.pop();
     }
