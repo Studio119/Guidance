@@ -2,18 +2,24 @@
  * @Author: Antoine YANG 
  * @Date: 2020-01-25 15:52:37 
  * @Last Modified by: Antoine YANG
- * @Last Modified time: 2020-01-26 15:10:42
+ * @Last Modified time: 2020-01-26 23:28:22
  */
 
 /**
- * 选择两种排序中交叉最少的一种
- * @param {*} prevState     上一步的状态
- * @param {*} currState     当前的状态
- * @param {*} order1        第一种及其交叉次数
- * @param {*} order2        第二种
+ * 选择两种排序中交叉最少的一种。
+ * @param {Array<{[city: string]: number}>}             prevState   上一步的状态
+ * @param {Array<{[city: string]: number}>}             currState   当前的状态
+ * @param {{order: Array<number>; crossings: number;}}  order1      第一种方案及其交叉次数
+ * @param {Array<number>}                               order2      第二种方案
+ * @returns {{order: Array<number>; crossings: number;}}            更好的一种方案
  */
 const better = (prevState, currState, order1, order2) => {
+    /**
+     * 地区及其先后排序位置的字典
+     * @type {{[name: string]: [number, number]}}
+     */
     let dict = {};
+    // 记录每个地区两次排序的位置
     prevState.forEach((group, index) => {
         group.forEach(city => {
             dict[city] = [index];
@@ -26,7 +32,9 @@ const better = (prevState, currState, order1, order2) => {
             }
         });
     });
+    /** 方案二交叉次数 */
     let crossings = 0;
+    /** 已经遍历过的地区 */
     let eached = {};
     for (const a in dict) {
         if (dict.hasOwnProperty(a)) {
@@ -36,6 +44,7 @@ const better = (prevState, currState, order1, order2) => {
                 if (dict.hasOwnProperty(b) && dict.hasOwnProperty(a) && !eached[b]) {
                     const bChange = dict[b];
                     if ((bChange[0] - aChange[0]) * (bChange[1] - aChange[1]) < 0) {
+                        // 若两次排序中，地区 A 和地区 B 的相对类别排序(大小关系)发生改变，则记为相交一次 
                         crossings++;
                     }
                 }
@@ -43,16 +52,18 @@ const better = (prevState, currState, order1, order2) => {
         }
     }
     
+    // 返回更好的一次方案及其交叉次数
     return !order1 || crossings < order1.crossings ? { order: order2, crossings: crossings } : order1;
 }
 
 /**
  * 进入决策
- * @param {*} prevState     上一步的状态
- * @param {*} currState     当前的状态
- * @param {*} best          记录最好的一次决策
- * @param {*} possibleOrder 当前备选的序号
- * @param {*} order         已经选择的序号
+ * @param {Array<{name: string; label: number;}>}               prevState     上一次采用的状态
+ * @param {Array<{name: string; label: number;}>}               currState     当前状态
+ * @param {{order: Array<number>; crossings: number;} | null}   best          记录最好的一次决策
+ * @param {Array<number>}                                       possibleOrder 当前备选的序号
+ * @param {Array<number>}                                       order         已经选择的序号
+ * @returns {{order: Array<number>; crossings: number;}}                      最好的一次方案
  */
 const decide = (prevState, currState, best, possibleOrder, order) => {
     if (possibleOrder.length === 0) {
@@ -75,12 +86,16 @@ const decide = (prevState, currState, best, possibleOrder, order) => {
 }
 
 /**
- * Reduce path crossings
- * @param {*} paths path list
- * @param {*} prevPaths previous path list
+ * 根据上一次采用的状态对当前状态的各分组重排序，以减少路径交叉。
+ * @param {Array<{name: string; label: number;}>}       paths       当前状态
+ * @param {Array<{name: string; label: number;}>}       prevPaths   上一次采用的状态
+ * @returns {Array<{name: string; label: number;}>}                 路径交叉数量最少的状态
  */
 const adjustPaths = (paths, prevPaths) => {
-    // 储存上一个状态和当前状态的各个类别
+    /**
+     * 上一个状态各个类别对应的地区列表
+     * @type {{[label: number]: Array<string>}}
+     */
     const prevDict = {};
     prevPaths.forEach(item => {
         if (prevDict.hasOwnProperty(item.label)) {
@@ -95,7 +110,15 @@ const adjustPaths = (paths, prevPaths) => {
             prevDict[key] = list.sort((a, b) => a.localeCompare(b));    // 保证组内有序不交叉
         }
     }
+    /**
+     * 上一个状态各个类别对应的地区列表
+     * @type {Array<Array<string>>}
+     */
     const prevList = Object.values(prevDict);
+    /**
+     * 当前状态各个类别对应的地区列表
+     * @type {{[label: number]: Array<string>}}
+     */
     let currDict = {};
     paths.forEach(item => {
         if (currDict.hasOwnProperty(item.label)) {
@@ -110,9 +133,14 @@ const adjustPaths = (paths, prevPaths) => {
             currDict[key] = list.sort((a, b) => a.localeCompare(b));    // 保证组内有序不交叉
         }
     }
+    /**
+     * 当前状态各个类别对应的地区列表
+     * @type {Array<Array<string>>}
+     */
     const currList = Object.values(currDict);
     
-    let possibleOrder = [];     // 备选排序列表
+    /** 未被选择的序号的集合 */
+    let possibleOrder = [];
     for (let i = 0; i < currList.length; i++) {
         possibleOrder.push(i);
     }
@@ -120,6 +148,10 @@ const adjustPaths = (paths, prevPaths) => {
     // 进入决策
     const { order: bestDecision } = decide(prevList, currList, null, possibleOrder, []);
 
+    /**
+     * 按照决策结果更新的状态
+     * @type {Array<{name: string; label: number;}>}
+     */
     let best = [];
     currList.forEach((group, index) => {
         group.forEach(item => {
@@ -133,18 +165,39 @@ const adjustPaths = (paths, prevPaths) => {
     return best;
 };
 
+/**
+ * 封装所有用于和产生于 flow chart 的属性和逻辑的对象
+ */
 const flowChart = {
+    /** 加载？？图相关元素的 SVG 标签 */
     SVG: d3.select("#SVGflowChart"),
+    /** ？？图对应 SVG 容器的实际宽度 */
     width: parseInt(d3.select("#SVGflowChart").attr("width")),
+    /** ？？图对应 SVG 容器的实际高度 */
     height: parseInt(d3.select("#SVGflowChart").attr("height")),
+    /** ？？图对应 SVG 容器的内部间隔 */
     padding: {
         top: 16, right: 20, bottom: 46, left: 20
     },
+    /** ？？图的时间(水平方向)比例尺 */
     scaleX: null,
+    /**
+     * ？？图加载的数据
+     * @type {{[year: number]: {[prov: string]: [number, number, number]}} | null}
+     */
     state: null,
+    /**
+     * 完成元素渲染。
+     * @private 内部逻辑
+     */
     render: () => {
+        /**
+         * 按照时间记录的数据列表
+         * @type {Array<{year: number; list: Array<{name: string; label: number;}>}>}
+         */
         let timeList = [];
 
+        // 添加背景
         flowChart.SVG.selectAll(".background")
                     .data([0])
                     .enter()
@@ -154,56 +207,89 @@ const flowChart = {
                     .attr('y', flowChart.padding.top)
                     .attr('width', (flowChart.width - flowChart.padding.left - flowChart.padding.right) * 4)
                     .attr('height', flowChart.height - flowChart.padding.top - flowChart.padding.bottom)
-                    .style('fill', '#101020D0');
+                    .style('fill', '#101020D0')
+                    .on("click", () => {
+                        // 点击背景清空高亮的路径
+                        flowChart.SVG.selectAll(".path")
+                                    .style("opacity", 0.6)
+                                    .style("stroke-width", '1px');
+                    });
 
+        // 解析每一年的数据，加入进列表中
         Object.entries(flowChart.state).forEach(entry => {
+            /**
+             * 此年的数据
+             * @type {{year: number; list: Array<{name: string; label: number;}>;}}
+             */
             let thisYear = {
                 year: parseInt(entry[0]),
                 list: []
             };
+            /**
+             * 此年每个地区的分类列表
+             * @type {Array<{name: string; label: number;}>}
+             */
             let list = Object.entries(entry[1]).map(e => {
                 return {
                     name: PrvcnmDict[e[0]],
                     label: e[1][2]
                 };
             });
+            // 列表按类别标签排序
             thisYear.list = list.sort((a, b) => {
                 return a.label - b.label;
             });
             timeList.push(thisYear);
         });
 
+        /**
+         * 以地区为索引的绘制数据
+         * @type {{[name: string]: Array<{year: number; label: number; x: number; y: number; height: number;}>}}
+         */
         let flows = {};
 
+        /** 平滑部分的宽度 */
         const rectWidth = (flowChart.scaleX(1) - flowChart.scaleX(0)) * 0.2;
 
+        /**
+         * 每次迭代中，记录前一次实际使用的分类状态
+         * @type {{name: string; label: number;} | null}
+         */
         let prevOrder = null;
 
         timeList.forEach(item => {
+            /** 对应年份每条线可分配的高度 */
             const rectHeight = (flowChart.height - flowChart.padding.top - flowChart.padding.bottom) / item.list.length;
 
+            /** 决策产生的状态 */
             const list = prevOrder ? adjustPaths(item.list, prevOrder)
                                     : item.list.sort((a, b) => a.name.localeCompare(b.name));
 
             prevOrder = list;
 
+            /**
+             * 每一类标签含有的地区数量
+             * @type {Array<number>}
+             */
             let groups = [];
 
-            list.sort((a, b) => {
+            list.sort((a, b) => {               // 将列表按类别排序
                 return a.label - b.label;
             }).forEach((city, i) => {
+                // 更新对应标签所含的地区数量
                 if (groups[city.label]) {
                     groups[city.label]++;
                 } else {
                     groups[city.label] = 1;
                 }
+                // 添加对于当前地区的一条数据信息
                 if (flows.hasOwnProperty(city.name)) {
                     flows[city.name].push({
-                        year: item.year,
-                        label: city.label,
-                        x: flowChart.padding.left + flowChart.scaleX(item.year),
-                        y: flowChart.padding.top + (i + 0.25) * rectHeight,
-                        height: rectHeight * 0.3
+                        year: item.year,                                            // 数据对应年份
+                        label: city.label,                                          // 所在的类别标签
+                        x: flowChart.padding.left + flowChart.scaleX(item.year),    // x 坐标偏移量
+                        y: flowChart.padding.top + (i + 0.25) * rectHeight,         // y 坐标偏移量
+                        height: rectHeight * 0.3                                    // 图形竖直剖面的宽度
                     });
                 } else {
                     flows[city.name] = [{
@@ -216,7 +302,9 @@ const flowChart = {
                 }
             });
 
+            /** 类别框 update 部分 */
             const groupRect = flowChart.SVG.selectAll(".group-" + item.year).data(groups);
+            // 类别框 update 部分绘制逻辑
             groupRect.attr('x', flowChart.padding.left + flowChart.scaleX(item.year))
                     .attr('y', (d, i) => {
                         let sum = 0;
@@ -232,6 +320,7 @@ const flowChart = {
                     .style("stroke", "black")
                     .style("stroke-width", "2.6px")
                     .on('click', (d, i) => {
+                        // 点击高亮所包含的地区的路径
                         flowChart.SVG.selectAll(".path")
                                     .style("opacity", 0.6)
                                     .style("stroke-width", '1px');
@@ -239,6 +328,7 @@ const flowChart = {
                                     .style("opacity", 1)
                                     .style("stroke-width", "4px");
                     });
+            // 类别框 enter 部分绘制逻辑
             groupRect.enter()
                     .append('rect')
                     .attr('class', "group-" + item.year)
@@ -265,9 +355,15 @@ const flowChart = {
                                     .style("opacity", 1)
                                     .style("stroke-width", "4px");
                     });
+            // 类别框 exit 部分绘制逻辑
             groupRect.exit().remove();
         });
 
+        /**
+         * 地区对应数据的列表
+         * @type {Array<{name: string;
+         * coordinates: Array<{year: number; label: number; x: number; y: number; height: number;}>}>}
+         */
         const cityFlows = Object.entries(flows).map(entry => {
             return {
                 name: entry[0],
@@ -275,7 +371,9 @@ const flowChart = {
             };
         });
 
+        /** 路径的 update 部分 */
         const paths = flowChart.SVG.selectAll(".path").data(cityFlows);
+        // 路径 update 部分绘制逻辑
         paths.attr("id", d => ("path_" + d.name))
             .attr("class", d => {
                 return "path " + d.coordinates.map(c => ("year" + c.year + "label" + c.label)).join(" ");
@@ -314,6 +412,7 @@ const flowChart = {
                     return "1px";
                 }
             });
+        // 路径 enter 部分绘制逻辑
         paths.enter()
             .append("path")
             .attr("class", d => {
@@ -355,12 +454,23 @@ const flowChart = {
                 }
             })
             .style("pointer-events", "none");
+        // 路径 exit 部分绘制逻辑
         paths.exit().remove();
     },
+    /**
+     * 初始化 flow chart 图数据。
+     * @public 外部接口
+     * @param {{[year: number]: {[prov: string]: [number, number, number]}}} state
+     */
     initialize: state => {
         flowChart.state = state;
         flowChart.render();
     },
+    /**
+     * 平移元素容器。
+     * @public 外部接口
+     * @param {number} x 当前选定年份
+     */
     transform: x => {
         flowChart.SVG.transition()
                     .duration(200)
