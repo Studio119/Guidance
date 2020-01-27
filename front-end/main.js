@@ -2,7 +2,7 @@
  * @Author: Antoine YANG 
  * @Date: 2020-01-11 15:42:48 
  * @Last Modified by: Antoine YANG
- * @Last Modified time: 2020-01-26 17:07:33
+ * @Last Modified time: 2020-01-27 18:19:00
  */
 "use strict";
 
@@ -259,16 +259,16 @@ const initializeTimeSlider = timeTable => {
                     .style("fill", "#000000")
                     .text(timeTable[0]);
     
-    /** 深色的指示背景 */
-    const highlight = d3.select("#timeSlider")
-                    .append("rect")
-                    .attr("id", "slideHighlight")
-                    .attr("x", timeScale(timeTable[0]) - 30 + padding.side)
-                    .attr("y", flowChart.padding.top - 294)
-                    .attr("width", 60)
-                    .attr("height", flowChart.height - flowChart.padding.top - flowChart.padding.bottom)
-                    .style("transform", "translateX(0)")
-                    .style("fill", "#101020");
+    // /** 深色的指示背景 */
+    // const highlight = d3.select("#timeSlider")
+    //                 .append("rect")
+    //                 .attr("id", "slideHighlight")
+    //                 .attr("x", timeScale(timeTable[0]) - 30 + padding.side)
+    //                 .attr("y", flowChart.padding.top - 294)
+    //                 .attr("width", 60)
+    //                 .attr("height", flowChart.height - flowChart.padding.top - flowChart.padding.bottom)
+    //                 .style("transform", "translateX(0)")
+    //                 .style("fill", "#101020");
 
     /** 可拖拽实体的拖曳行为 */
     const behavior = d3.drag()
@@ -284,7 +284,7 @@ const initializeTimeSlider = timeTable => {
                             if (currentYear !== columnChart.currentYear) {
                                 focus.attr("cx", timeScale(currentYear));
                                 label.style("fill", "#A0A0A0").attr("x", timeScale(currentYear)).text(currentYear);
-                                highlight.style("transform", "translateX(" + timeScale(currentYear) + "px)");
+                                // highlight.style("transform", "translateX(" + timeScale(currentYear) + "px)");
                                 columnChart.setYear(currentYear);
                                 scatterChart.update(currentYear);
                                 flowChart.transform(currentYear);

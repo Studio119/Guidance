@@ -2,7 +2,7 @@
  * @Author: Antoine YANG 
  * @Date: 2020-01-25 15:52:37 
  * @Last Modified by: Antoine YANG
- * @Last Modified time: 2020-01-26 23:28:22
+ * @Last Modified time: 2020-01-27 18:03:34
  */
 
 /**
@@ -197,7 +197,7 @@ const flowChart = {
          */
         let timeList = [];
 
-        // 添加背景
+        // 添加白色背景
         flowChart.SVG.selectAll(".background")
                     .data([0])
                     .enter()
@@ -207,7 +207,8 @@ const flowChart = {
                     .attr('y', flowChart.padding.top)
                     .attr('width', (flowChart.width - flowChart.padding.left - flowChart.padding.right) * 4)
                     .attr('height', flowChart.height - flowChart.padding.top - flowChart.padding.bottom)
-                    .style('fill', '#101020D0')
+                    .style('fill', 'white')
+                    .style('stroke', "#101020")
                     .on("click", () => {
                         // 点击背景清空高亮的路径
                         flowChart.SVG.selectAll(".path")
@@ -319,10 +320,49 @@ const flowChart = {
                     .style("fill", "white")
                     .style("stroke", "black")
                     .style("stroke-width", "2.6px")
+                    .on("mouseenter", (d, i) => {
+                        let names = [];
+                        flowChart.SVG.selectAll(".year" + item.year + "label" + i)
+                                    .each(e => {
+                                        names.push(e.name);
+                                    });
+                        /** 容器 DOM 的浏览器定位 */
+                        const bounding = d3.select("#SVGflowChart").node().getBoundingClientRect();
+                        tooltip.show()
+                                .moveTo(
+                                    bounding.x + (
+                                        flowChart.padding.left + flowChart.scaleX(item.year)
+                                            + parseInt(
+                                                d3.select("#SVGflowChart").style("transform").replace("translate(", "")
+                                            )
+                                        > flowChart.width / 8 ? -160 : 40
+                                    ) + (flowChart.padding.left + flowChart.scaleX(item.year)),
+                                    bounding.y + 20
+                                )
+                                .html(
+                                    item.year
+                                    + (item.year === columnChart.currentYear ? (
+                                        " <span style='color: #C06060; font-size: 13px;'>("
+                                    ) : (
+                                        " <span style='color: #808080; font-size: 12px;'>(不是"
+                                    )) + "当前选择年份)</span><br />"
+                                    + "类别成员(" + d + ")：<br />"
+                                    + "<ul>"
+                                    + names.map(name => ("<li>" + name + "</li>")).join("")
+                                    + "</ul>"
+                                );
+                    })
+                    .on("mouseleave", () => {
+                        tooltip.hide();
+                    })
                     .on('click', (d, i) => {
+                        // 清除椭圆高亮
+                        scatterChart.G.selectAll("ellipse")
+                                    .style("stroke", "black")
+                                    .style("stroke-width", "1px");
                         // 点击高亮所包含的地区的路径
                         flowChart.SVG.selectAll(".path")
-                                    .style("opacity", 0.6)
+                                    .style("opacity", 0.3)
                                     .style("stroke-width", '1px');
                         flowChart.SVG.selectAll(".year" + item.year + "label" + i)
                                     .style("opacity", 1)
@@ -347,9 +387,47 @@ const flowChart = {
                     .style("fill", "white")
                     .style("stroke", "black")
                     .style("stroke-width", "2.6px")
+                    .on("mouseenter", (d, i) => {
+                        let names = [];
+                        flowChart.SVG.selectAll(".year" + item.year + "label" + i)
+                                    .each(e => {
+                                        names.push(e.name);
+                                    });
+                        /** 容器 DOM 的浏览器定位 */
+                        const bounding = d3.select("#SVGflowChart").node().getBoundingClientRect();
+                        tooltip.show()
+                                .moveTo(
+                                    bounding.x + (
+                                        flowChart.padding.left + flowChart.scaleX(item.year)
+                                            + parseInt(
+                                                d3.select("#SVGflowChart").style("transform").replace("translate(", "")
+                                            )
+                                        > flowChart.width / 8 ? -160 : 40
+                                    ) + (flowChart.padding.left + flowChart.scaleX(item.year)),
+                                    bounding.y + 20
+                                )
+                                .html(
+                                    item.year
+                                    + (item.year === columnChart.currentYear ? (
+                                        " <span style='color: #C06060; font-size: 13px;'>("
+                                    ) : (
+                                        " <span style='color: #808080; font-size: 12px;'>(不是"
+                                    )) + "当前选择年份)</span><br />"
+                                    + "类别成员(" + d + ")：<br />"
+                                    + "<ul>"
+                                    + names.map(name => ("<li>" + name + "</li>")).join("")
+                                    + "</ul>"
+                                );
+                    })
+                    .on("mouseleave", () => {
+                        tooltip.hide();
+                    })
                     .on('click', (d, i) => {
+                        scatterChart.G.selectAll("ellipse")
+                                    .style("stroke", "black")
+                                    .style("stroke-width", "1px");
                         flowChart.SVG.selectAll(".path")
-                                    .style("opacity", 0.6)
+                                    .style("opacity", 0.3)
                                     .style("stroke-width", '1px');
                         flowChart.SVG.selectAll(".year" + item.year + "label" + i)
                                     .style("opacity", 1)

@@ -2,8 +2,97 @@
  * @Author: Antoine YANG 
  * @Date: 2020-01-25 13:31:29 
  * @Last Modified by: Antoine YANG
- * @Last Modified time: 2020-01-26 17:36:50
+ * @Last Modified time: 2020-01-27 17:25:04
  */
+
+/**
+ * 根据类别与所对应的散点实际坐标的键值对生成椭圆列表。
+ * @param {{[label: number]: Array<{x: number; y: number;}>}}                           dict    键值对
+ * @returns {Array<{cx: number; cy: number; rx: number; ry: number; rotate: number}>}           椭圆参数列表
+ */
+const getEllipses = dict => {
+    /**
+     * 椭圆参数列表
+     * @type {Array<{cx: number; cy: number; rx: number; ry: number; rotate: number}>}
+     */
+    let list = [];
+
+    for (const label in dict) {
+        if (dict.hasOwnProperty(label)) {
+            const set = dict[label];
+            if (set.length === 1) {
+                // 仅有一个散点，以其为圆心取同心圆
+                list.push({
+                    cx: set[0].x,
+                    cy: set[0].y,
+                    rx: 12,
+                    ry: 12,
+                    rotate: 0
+                });
+            } else if (set.length === 2) {
+                // 有两个散点，以其连线中点为圆心取椭圆
+                const distance = Math.sqrt(Math.pow(set[0].x - set[1].x, 2) + Math.pow(set[0].y - set[1].y, 2));
+                const degree = (set[1].y - set[0].y) * (set[1].x - set[0].x) >= 0
+                                ? Math.acos(Math.abs(set[1].x - set[0].x) / distance) / Math.PI * 180
+                                : -1 * Math.acos(Math.abs(set[1].x - set[0].x) / distance) / Math.PI * 180;
+                list.push({
+                    cx: (set[0].x + set[1].x) / 2,
+                    cy: (set[0].y + set[1].y) / 2,
+                    rx: distance * 0.5 + 16,
+                    ry: 20,
+                    rotate: degree
+                });
+            } else {
+                // 有大于两个散点，先选取距离最远的一对点
+                /** 最远的记录 */
+                let maximum = {
+                    a: 0, b: 0, dist: 0
+                };
+                // 遍历距离矩阵
+                for (let a = 0; a < set.length - 1; a++) {
+                    for (let b = a + 1; b < set.length; b++) {
+                        /** 两点间的欧氏距离 */
+                        const distance = Math.sqrt(Math.pow(set[b].x - set[a].x, 2) + Math.pow(set[b].y - set[a].y, 2));
+                        if (distance > maximum.dist) {
+                            maximum = {
+                                a: a, b: b, dist: distance
+                            };
+                        }
+                    }
+                }
+                // 确定这一对点为椭圆的两个焦点，计算最远的一个点的距离
+                let max = 0;
+                for (let i = 0; i < set.length; i++) {
+                    if (i === maximum.a || i === maximum.b) {
+                        continue;
+                    } else {
+                        /** 当前点与两焦点的欧氏距离之和 */
+                        const distance = Math.sqrt(
+                            Math.pow(set[i].x - set[maximum.a].x, 2) + Math.pow(set[i].y - set[maximum.a].y, 2)
+                                        ) + Math.sqrt(
+                            Math.pow(set[i].x - set[maximum.b].x, 2) + Math.pow(set[i].y - set[maximum.b].y, 2)
+                                            );
+                        if (distance > max) {
+                            max = distance;
+                        }
+                    }
+                }
+                const degree = (set[maximum.b].y - set[maximum.a].y) * (set[maximum.b].x - set[maximum.a].x) >= 0
+                                ? Math.acos(Math.abs(set[maximum.b].x - set[maximum.a].x) / max) / Math.PI * 180
+                                : -1 * Math.acos(Math.abs(set[maximum.b].x - set[maximum.a].x) / max) / Math.PI * 180;
+                list.push({
+                    cx: (set[maximum.a].x + set[maximum.b].x) / 2,
+                    cy: (set[maximum.a].y + set[maximum.b].y) / 2,
+                    rx: maximum.dist * 0.5 + 16,
+                    ry: Math.max(16, max * 0.4 + 16),
+                    rotate: degree
+                });
+            }
+        }
+    }
+
+    return list;
+};
 
 /**
  * 这个对象用于封装所有用于和产生于散点图的属性和逻辑
@@ -55,7 +144,10 @@ const scatterChart = {
         /** y 坐标的定义域 */
         let domainY = [-0.1, 0.1];
 
-        /** 列表形式的散点数据 */
+        /**
+         * 列表形式的散点数据
+         * @type {Array<{id: number; coordinates: [number, number]; label: number;}>}
+         */
         const dataList = Object.entries(data).map(entry => {     // 将对象转化为列表
             return {
                 id: entry[0],
@@ -102,6 +194,131 @@ const scatterChart = {
                                 .domain(domainY)
                                 .range([range, 0]);
 
+        /**
+         * 各个标签所含的散点坐标列表
+         * @type {{[label: number]: Array<{x: number; y: number;}>}}
+         */
+        let eachLabel = {};
+
+        dataList.forEach(item => {
+            if (eachLabel.hasOwnProperty(item.label)) {
+                eachLabel[item.label].push({
+                    x: scatterChart.padding.left + scatterChart.scaleX(item.coordinates[0]),
+                    y: scatterChart.padding.top + scatterChart.scaleY(item.coordinates[1])
+                });
+            } else {
+                eachLabel[item.label] = [{
+                    x: scatterChart.padding.left + scatterChart.scaleX(item.coordinates[0]),
+                    y: scatterChart.padding.top + scatterChart.scaleY(item.coordinates[1])
+                }];
+            }
+        });
+
+        /** 所有类别对应的边框 */
+        const sets = getEllipses(eachLabel);
+        // 绘制椭圆
+        /** 椭圆 update 部分 */
+        const ellipses = scatterChart.G.selectAll("ellipse").data(sets);
+        // 椭圆 update 部分绘制逻辑
+        ellipses.attr('transform', d => {
+                    return "translate(" + d.cx + "," + d.cy + "),rotate(" + d.rotate + ")";
+                })
+                .attr("id", (d, i) => ("group_" + i))
+                .attr('rx', d => d.rx)
+                .attr('ry', d => d.ry)
+                .style("fill", (d, i) => d3.schemePaired[i])
+                .style("stroke", "black")
+                .style("stroke-width", "1px")
+                .on("click", (d, i) => {
+                    // 高亮自身
+                    scatterChart.G.selectAll("ellipse")
+                                .style("stroke", "black")
+                                .style("stroke-width", "1px");
+                    scatterChart.G.select("#group_" + i)
+                                .style("stroke", d3.schemePaired[i])
+                                .style("stroke-width", "3px");
+                    // 点击高亮所包含的地区的路径
+                    flowChart.SVG.selectAll(".path")
+                                .style("opacity", 0.3)
+                                .style("stroke-width", '1px');
+                    dataList.forEach(item => {
+                        if (item.label === i) {
+                            flowChart.SVG.select("#path_" + PrvcnmDict[item.id])
+                                        .style("opacity", 1)
+                                        .style("stroke-width", "4px");
+                        }
+                    });
+                })
+                .on("mouseenter", (d, i) => {
+                    /** 对应的地区名称 */
+                    let names = [];
+                    dataList.forEach(item => {
+                        if (item.label === i) {
+                            names.push(PrvcnmDict[item.id]);
+                        }
+                    });
+                    /** 散点图容器 DOM 的浏览器定位 */
+                    const bounding = d3.select("#SVGscatterChart").node().getBoundingClientRect();
+                    tooltip.show()
+                            .moveTo(bounding.x + d.cx + Math.max(d.rx, d.ry) + 10, bounding.y + d.cy)
+                            .html(names.join("<br />"));
+                })
+                .on("mouseleave", () => {
+                    tooltip.hide();
+                });
+        // 椭圆 enter 部分绘制逻辑
+        ellipses.enter()
+                .append('ellipse')
+                .attr("id", (d, i) => ("group_" + i))
+                .attr('transform', d => {
+                    return "translate(" + d.cx + "," + d.cy + "),rotate(" + d.rotate + ")";
+                })
+                .attr('rx', d => d.rx)
+                .attr('ry', d => d.ry)
+                .style("fill", (d, i) => d3.schemePaired[i])
+                .style("fill-opacity", 0.3)
+                .style("stroke", "black")
+                .style("stroke-width", "1px")
+                .on("click", (d, i) => {
+                    // 高亮自身
+                    scatterChart.G.selectAll("ellipse")
+                                .style("stroke", "black")
+                                .style("stroke-width", "1px");
+                    scatterChart.G.select("#group_" + i)
+                                .style("stroke", d3.schemePaired[i])
+                                .style("stroke-width", "3px");
+                    // 点击高亮所包含的地区的路径
+                    flowChart.SVG.selectAll(".path")
+                                .style("opacity", 0.3)
+                                .style("stroke-width", '1px');
+                    dataList.forEach(item => {
+                        if (item.label === i) {
+                            flowChart.SVG.select("#path_" + PrvcnmDict[item.id])
+                                        .style("opacity", 1)
+                                        .style("stroke-width", "4px");
+                        }
+                    });
+                })
+                .on("mouseenter", (d, i) => {
+                    /** 对应的地区名称 */
+                    let names = [];
+                    dataList.forEach(item => {
+                        if (item.label === i) {
+                            names.push(PrvcnmDict[item.id]);
+                        }
+                    });
+                    /** 散点图容器 DOM 的浏览器定位 */
+                    const bounding = d3.select("#SVGscatterChart").node().getBoundingClientRect();
+                    tooltip.show()
+                            .moveTo(bounding.x + d.cx + Math.max(d.rx, d.ry) + 10, bounding.y + d.cy)
+                            .html(names.join("<br />"));
+                })
+                .on("mouseleave", () => {
+                    tooltip.hide();
+                });
+        // 椭圆 exit 部分绘制逻辑
+        ellipses.exit().remove();
+
         // 绘制散点
         /** 散点 update 部分 */
         const scatters = scatterChart.SVG.selectAll("circle").data(dataList);
@@ -112,6 +329,20 @@ const scatterChart = {
                 })
                 .attr("cy", d => {
                     return scatterChart.padding.top + scatterChart.scaleY(d.coordinates[1]);
+                })
+                .style("fill", d => d3.schemePaired[d.label])
+                .on("mouseenter", d => {
+                    /** 散点图容器 DOM 的浏览器定位 */
+                    const bounding = d3.select("#SVGscatterChart").node().getBoundingClientRect();
+                    tooltip.show()
+                            .moveTo(
+                                bounding.x + scatterChart.padding.left + scatterChart.scaleX(d.coordinates[0]) + 16,
+                                bounding.y + scatterChart.padding.top + scatterChart.scaleY(d.coordinates[1])
+                            )
+                            .html(PrvcnmDict[d.id]);
+                })
+                .on("mouseleave", () => {
+                    tooltip.hide();
                 })
                 .on("click", d => {
                     // 高亮对应元素
@@ -129,7 +360,7 @@ const scatterChart = {
                                     .attr("r", "8px")
                                     .style("stroke-width", "3px");
                     flowChart.SVG.selectAll(".path")
-                                    .style("opacity", 0.6)
+                                    .style("opacity", 0.3)
                                     .style("stroke-width", '1px');
                     flowChart.SVG.select("#path_" + d.name)
                                     .style("opacity", 1)
@@ -169,6 +400,19 @@ const scatterChart = {
                     }
                 })
                 .style("fill", d => d3.schemePaired[d.label])
+                .on("mouseenter", d => {
+                    /** 散点图容器 DOM 的浏览器定位 */
+                    const bounding = d3.select("#SVGscatterChart").node().getBoundingClientRect();
+                    tooltip.show()
+                            .moveTo(
+                                bounding.x + scatterChart.padding.left + scatterChart.scaleX(d.coordinates[0]) + 16,
+                                bounding.y + scatterChart.padding.top + scatterChart.scaleY(d.coordinates[1])
+                            )
+                            .html(PrvcnmDict[d.id]);
+                })
+                .on("mouseleave", () => {
+                    tooltip.hide();
+                })
                 .on("click", d => {
                     // 高亮对应元素
                     columnChart.SVG.selectAll("rect")
@@ -185,7 +429,7 @@ const scatterChart = {
                                     .attr("r", "8px")
                                     .style("stroke-width", "3px");
                     flowChart.SVG.selectAll(".path")
-                                    .style("opacity", 0.6)
+                                    .style("opacity", 0.4)
                                     .style("stroke-width", '1px');
                     flowChart.SVG.select("#path_" + d.name)
                                     .style("opacity", 1)
