@@ -2,7 +2,7 @@
  * @Author: Antoine YANG 
  * @Date: 2020-01-25 15:52:37 
  * @Last Modified by: Antoine YANG
- * @Last Modified time: 2020-01-27 18:03:34
+ * @Last Modified time: 2020-02-07 18:08:46
  */
 
 /**
@@ -356,6 +356,10 @@ const flowChart = {
                         tooltip.hide();
                     })
                     .on('click', (d, i) => {
+                        if (item.year !== columnChart.currentYear) {
+                            // 同步年份
+                            flyTo(item.year);
+                        }
                         // 清除椭圆高亮
                         scatterChart.G.selectAll("ellipse")
                                     .style("stroke", "black")
@@ -398,21 +402,18 @@ const flowChart = {
                         tooltip.show()
                                 .moveTo(
                                     bounding.x + (
-                                        flowChart.padding.left + flowChart.scaleX(item.year)
-                                            + parseInt(
-                                                d3.select("#SVGflowChart").style("transform").replace("translate(", "")
-                                            )
-                                        > flowChart.width / 8 ? -160 : 40
+                                        d3.event.clientX >= 700 ? -240 : 40
                                     ) + (flowChart.padding.left + flowChart.scaleX(item.year)),
                                     bounding.y + 20
                                 )
                                 .html(
                                     item.year
                                     + (item.year === columnChart.currentYear ? (
-                                        " <span style='color: #C06060; font-size: 13px;'>("
+                                        " <span style='color: #C06060; font-size: 13px;'>(当前选择年份)</span><br />"
                                     ) : (
-                                        " <span style='color: #808080; font-size: 12px;'>(不是"
-                                    )) + "当前选择年份)</span><br />"
+                                        " <span style='color: #808080; font-size: 12px;'>"
+                                        + "(不是当前选择年份，单击跳转)</span><br />"
+                                    ))
                                     + "类别成员(" + d + ")：<br />"
                                     + "<ul>"
                                     + names.map(name => ("<li>" + name + "</li>")).join("")
@@ -423,9 +424,15 @@ const flowChart = {
                         tooltip.hide();
                     })
                     .on('click', (d, i) => {
+                        if (item.year !== columnChart.currentYear) {
+                            // 同步年份
+                            flyTo(item.year);
+                        }
+                        // 清除椭圆高亮
                         scatterChart.G.selectAll("ellipse")
                                     .style("stroke", "black")
                                     .style("stroke-width", "1px");
+                        // 点击高亮所包含的地区的路径
                         flowChart.SVG.selectAll(".path")
                                     .style("opacity", 0.3)
                                     .style("stroke-width", '1px');

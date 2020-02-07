@@ -3,8 +3,10 @@
 <head>
     <meta charset='utf-8' />
 	<title>GDP: A Vis System</title>
+    <script src="./d3.v5.min.js" charset="utf-8"></script>
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v1.1.1/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v1.1.1/mapbox-gl.css' rel='stylesheet'/>
 	<link rel="stylesheet" type="text/css" href="./stylesheet.css" />
-	<script src="./d3.v5.min.js" charset="utf-8"></script>
 </head>
 <body>
     <div class="row">
@@ -19,6 +21,8 @@
             <div class="container">
                 <svg width="457.5px" height="220px" id="SVGcolumnChart"></svg>
             </div>
+        </div>
+        <div class="container" id="MapView">
         </div>
         <div class="container" id="scatterChartContainer">
             <svg width="483px" height="481px" id="SVGscatterChart"></svg>
@@ -39,6 +43,7 @@
     <script src="./pieChart.js"></script>
     <script src="./scatterChart.js"></script>
     <script src="./tooltip.js"></script>
+    <script src="./map.js"></script>
     <script src="./main.js"></script>
 </body>
 </html>

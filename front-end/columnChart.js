@@ -2,7 +2,7 @@
  * @Author: Antoine YANG 
  * @Date: 2020-01-11 15:42:51 
  * @Last Modified by: Antoine YANG
- * @Last Modified time: 2020-01-27 13:27:59
+ * @Last Modified time: 2020-02-07 16:35:34
  */
 "use strict";
 
@@ -45,7 +45,10 @@ const columnChart = {
     render: () => {
         /** 根据当前年份从加载的数据中选取对应的部分 */
         const origin = columnChart.state[columnChart.currentYear];
-        /** 本次渲染产生的数据列表，单个列表元素组成部分包括地区名称、总值与各个分项的字典 */
+        /**
+         * 本次渲染产生的数据列表，单个列表元素组成部分包括地区名称、总值与各个分项的字典
+         * @type {{name: string; value: number; details: {[code: string]: number};}}
+         */
         let data = [];
         /** 本次渲染数据的最大值，初始化为 100 以保证定义域区间长度不为 0 */
         let max = 100;

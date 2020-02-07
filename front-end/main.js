@@ -2,7 +2,7 @@
  * @Author: Antoine YANG 
  * @Date: 2020-01-11 15:42:48 
  * @Last Modified by: Antoine YANG
- * @Last Modified time: 2020-01-27 18:19:00
+ * @Last Modified time: 2020-02-07 18:01:29
  */
 "use strict";
 
@@ -23,14 +23,13 @@ const loadData = async () => {
                 // 回调函数
                 /**
                  * 柱状图所需的数据
-                 * @type {{[year: number]: {[prov: string]: {[gdpLabel: string]: number}}}}
                  */
                 const data = convertData(res);
                 // 柱状图导入数据
                 columnChart.update(data);
 
-                // 初始化时间轴
-                initializeTimeSlider(Object.keys(data).sort((a, b) => (a - b)));
+                // 初始化时间轴和跳转函数
+                flyTo = initializeTimeSlider(Object.keys(data).sort((a, b) => (a - b)));
             }).catch(err => {
                 console.warn(err);
             });
@@ -182,6 +181,7 @@ const updateCheckbox = name => {
 /**
  * 初始化时间轴。
  * @param {{[year: number]: {[prov: string]: {[gdpLabel: string]: number}}}} timeTable 柱状图格式数据
+ * @returns {(year: number) => void} flyTo 函数
  */
 const initializeTimeSlider = timeTable => {
     /** 容器内间距 */
@@ -258,17 +258,6 @@ const initializeTimeSlider = timeTable => {
                     .style("font-size", "11px")
                     .style("fill", "#000000")
                     .text(timeTable[0]);
-    
-    // /** 深色的指示背景 */
-    // const highlight = d3.select("#timeSlider")
-    //                 .append("rect")
-    //                 .attr("id", "slideHighlight")
-    //                 .attr("x", timeScale(timeTable[0]) - 30 + padding.side)
-    //                 .attr("y", flowChart.padding.top - 294)
-    //                 .attr("width", 60)
-    //                 .attr("height", flowChart.height - flowChart.padding.top - flowChart.padding.bottom)
-    //                 .style("transform", "translateX(0)")
-    //                 .style("fill", "#101020");
 
     /** 可拖拽实体的拖曳行为 */
     const behavior = d3.drag()
@@ -284,7 +273,6 @@ const initializeTimeSlider = timeTable => {
                             if (currentYear !== columnChart.currentYear) {
                                 focus.attr("cx", timeScale(currentYear));
                                 label.style("fill", "#A0A0A0").attr("x", timeScale(currentYear)).text(currentYear);
-                                // highlight.style("transform", "translateX(" + timeScale(currentYear) + "px)");
                                 columnChart.setYear(currentYear);
                                 scatterChart.update(currentYear);
                                 flowChart.transform(currentYear);
@@ -297,8 +285,37 @@ const initializeTimeSlider = timeTable => {
                         });
     // 将拖拽监听应用于接受交互的实体
     focus.call(behavior);
+
+    return year => {
+        if (columnChart.currentYear === year) {
+            return;
+        }
+        // 模拟开始拖拽
+        focus.transition().duration(300).attr("r", r * 0.62);
+    
+        // 实体对其到指定位置
+        focus.transition().duration(200).attr("cx", timeScale(year));
+        label.style("fill", "#A0A0A0").transition().duration(200).attr("x", timeScale(year)).text(year);
+        columnChart.setYear(year);
+        scatterChart.update(year);
+        flowChart.transform(year);
+    
+        // 模拟拖拽结束
+        focus.transition().delay(200).duration(300).attr("r", r);
+        circle.transition().delay(200).duration(300).attr("cx", timeScale(columnChart.currentYear));
+        label.transition().delay(200).duration(300).style("fill", "#000000");
+    };
 };
+
+/**
+ * 跳转到某一年，触发时间轴更新
+ * @type {(year: number) => void}
+ */
+let flyTo;
 
 
 // 从导入数据开始加载流程。
 loadData();
+
+// 实例化地图对象
+const map = new CustomerMap("MapView");
