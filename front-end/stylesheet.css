@@ -2,7 +2,7 @@
  * @Author: Antoine YANG 
  * @Date: 2020-01-11 15:36:49 
  * @Last Modified by: Antoine YANG
- * @Last Modified time: 2020-01-25 16:11:05
+ * @Last Modified time: 2020-02-07 16:06:06
  */
 
 body {
@@ -13,6 +13,10 @@ body {
 
 svg {
     border: 1px solid black;    /* this attribution help visualize the SVG element */
+}
+
+svg[display=block] {
+    border: none;
 }
 
 .row {
@@ -28,7 +32,16 @@ svg {
 #scatterChartContainer {
     position: absolute;
     top: 9px;
+    right: 10px;
+}
+
+#MapView {
+    width: 526px;
+    height: 481px;
+    position: absolute;
+    top: 9px;
     left: 482px;
+    border: 1px solid black;
 }
 
 label {
@@ -41,4 +54,24 @@ input[type=checkbox] {
 
 text {
     pointer-events: none;
+}
+
+#tooltip {
+    font-size: 14px;
+}
+
+#tooltip ul {
+    margin: 0px;
+    padding-left: 15px;
+    font-size: 13px;
+}
+
+.mapboxgl-popup-content {
+    padding: 8px 10px;
+    pointer-events: none;
+    text-align: center;
+}
+
+.mapboxgl-popup-content p {
+    margin: 2px;
 }
